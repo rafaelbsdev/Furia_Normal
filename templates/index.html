@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FURIA Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+</head>
+<body class="dark-theme">
+    <div class="theme-switcher">
+        <button id="theme-toggle">🌙</button>
+    </div>
+    
+    <div class="chat-container">
+        <div class="message-box" id="message-box">
+            {% for msg in message_history %}
+                <div class="message" data-id="{{ msg.id }}">
+                    <!-- Conteúdo da Mensagem -->
+                    <div class="message-content">
+                        {% if msg.is_bot %}
+                            <div class="bot-header">🤖 FURIA Bot</div>
+                        {% endif %}
+                        {{ msg.message|replace("\n", "<br>")|safe }}
+                    </div>
+    
+                    <!-- Botões de Ação -->
+                    <div class="message-actions">
+                        <button class="edit-btn" onclick="editMessage('{{ msg.id }}')">✏️</button>
+                        <button class="delete-btn" onclick="deleteMessage('{{ msg.id }}')">🗑️</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    
+        <!-- Área de Input (mantida igual) -->
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Digite @FuriaBot para comandos..." autocomplete="off">
+            <button id="send-button">Enviar</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    const socket = io();
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const messageBox = document.getElementById('message-box');
+    const themeToggle = document.getElementById('theme-toggle');
+    let inBotConversation = false;
+
+    // Função para adicionar mensagem ao chat
+    function addMessage(text, isBot = false, id = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isBot ? 'bot-message' : ''}`;
+            messageDiv.dataset.id = id || Date.now().toString();
+            
+            if (isBot) {
+                messageDiv.innerHTML = `
+                    <div class="bot-header">🤖 FURIA Bot</div>
+                    <div class="message-content">${text.replace(/\n/g, '<br>')}</div>
+                    <div class="message-actions">
+                        <button class="delete-btn" onclick="deleteMessage('${messageDiv.dataset.id}')">🗑️</button>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-content">${text}</div>
+                    <div class="message-actions">
+                        <button class="edit-btn" onclick="editMessage('${messageDiv.dataset.id}')">✏️</button>
+                        <button class="delete-btn" onclick="deleteMessage('${messageDiv.dataset.id}')">🗑️</button>
+                    </div>
+                `;
+            }
+            
+            messageBox.appendChild(messageDiv);
+            messageBox.scrollTop = messageBox.scrollHeight;
+            return messageDiv.dataset.id;
+        }
+
+
+    // Função de envio corrigida
+    function sendMessage() {
+    let message = messageInput.value.trim();
+    
+    if (!message) return;
+
+    // Força o padrão "@FuriaBot" se detectado
+    if (message.toLowerCase() === '@furiabot') {
+        message = '@FuriaBot'; // Padroniza o comando
+        inBotConversation = true;
+        messageInput.value = '@FuriaBot '; // Prepara o input para o próximo comando
+    }
+
+    // Envia a mensagem mesmo se for só "@FuriaBot"
+    socket.emit('send_message', { message: message });
+    
+    // Mantém o prefixo durante a conversa
+    messageInput.value = inBotConversation ? '@FuriaBot ' : '';
+    messageInput.focus();
+    }
+
+    // Listeners corrigidos
+    sendButton.addEventListener('click', sendMessage);
+    
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // Socket.io handlers
+    socket.on('new_message', (data) => {
+        addMessage(data.message);
+    });
+
+    socket.on('bot_message', (data) => {
+        addMessage(data.message, true);
+        inBotConversation = !data.is_final; // Atualiza o estado corretamente
+    });
+
+    // Toggle de Tema (Corrigido)
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.className = `${savedTheme}-theme`;
+        themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+    }
+
+    themeToggle.addEventListener('click', () => {
+        const isDark = document.body.classList.contains('dark-theme');
+        const newTheme = isDark ? 'light' : 'dark';
+        
+        document.body.classList.remove(`${isDark ? 'dark' : 'light'}-theme`);
+        document.body.classList.add(`${newTheme}-theme`);
+        localStorage.setItem('theme', newTheme);
+        themeToggle.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+    });
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', initializeTheme);
+</script>
+    <script>
+        // Funções para Editar/Apagar
+        function editMessage(id) {
+            const messageDiv = document.querySelector(`.message[data-id="${id}"]`);
+            const contentDiv = messageDiv.querySelector('.message-content:not(.bot-header)');
+            
+            // Cria input estilizado
+            const input = document.createElement('div');
+            input.contentEditable = true;
+            input.className = 'edit-input';
+            input.textContent = contentDiv.textContent;
+            
+            // Substitui o conteúdo
+            contentDiv.replaceWith(input);
+            input.focus();
+            
+            // Função para salvar
+            const saveEdit = () => {
+                const newText = input.textContent.trim();
+                if (newText) {
+                    socket.emit('edit_message', { 
+                        id, 
+                        message: newText 
+                    });
+                }
+                // Restaura o elemento original
+                const newContent = document.createElement('div');
+                newContent.className = 'message-content';
+                newContent.innerHTML = newText.replace(/\n/g, '<br>');
+                input.replaceWith(newContent);
+            };
+            
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    saveEdit();
+                }
+            });
+        }
+
+        // Deletar mensagem
+        function deleteMessage(id) {
+            if (confirm('Tem certeza que deseja apagar esta mensagem?')) {
+                socket.emit('delete_message', { id });
+                document.querySelector(`.message[data-id="${id}"]`).remove();
+            }
+        }
+
+        // Atualizar mensagem editada
+        socket.on('message_edited', (data) => {
+            const messageDiv = document.querySelector(`.message[data-id="${data.id}"]`);
+            if (messageDiv) {
+                messageDiv.querySelector('.message-content').textContent = data.message;
+            }
+        });
+        
+        socket.on('message_deleted', function(id) {
+            const messageDiv = document.querySelector(`.message[data-id="${id}"]`);
+            if (messageDiv) {
+                messageDiv.remove();
+            }
+        });
+    </script>
+</body>
+</html>

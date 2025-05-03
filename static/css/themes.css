@@ -1,0 +1,81 @@
+/* Tema Claro - Versão Validada */
+.light-theme {
+    --bg-color: #f9f9f9;
+    --text-color: #333;
+    --message-bg: white;
+    --input-bg: white;
+    --border-color: #ccc;
+    --button-bg: #007bff;
+    --button-hover: #0056b3;
+    --bot-bg: #fff3f6;
+    --bot-border: #ff003c;
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #c1c1c1;
+    --scrollbar-thumb-hover: #a8a8a8;
+}
+
+/* Tema Escuro - Versão Validada */
+.dark-theme {
+    --bg-color: #1e1e1e;
+    --text-color: #f0f0f0;
+    --message-bg: #2d2d2d;
+    --input-bg: #333;
+    --border-color: #444;
+    --button-bg: #555;
+    --button-hover: #666;
+    --bot-bg: #2a1a1f;
+    --bot-border: #ff003c;
+    --scrollbar-track: #2a2a2a;
+    --scrollbar-thumb: #505050;
+    --scrollbar-thumb-hover: #626262;
+}
+
+/* Aplicação das Variáveis (Mantendo seu padrão) */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.chat-container {
+    border-color: var(--border-color);
+}
+
+.message {
+    background-color: var(--message-bg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.input-area {
+    background-color: var(--bg-color);
+    border-top-color: var(--border-color);
+}
+
+input[type="text"] {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+button:not(#theme-toggle) {
+    background-color: var(--button-bg);
+    color: white; /* Mantido para contraste */
+}
+
+button:not(#theme-toggle):hover {
+    background-color: var(--button-hover);
+}
+
+/* Botão do Tema (Estilo Especial) */
+#theme-toggle {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.3s;
+}
+
+#theme-toggle:hover {
+    transform: scale(1.05);
+}
