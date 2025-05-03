@@ -1,4 +1,4 @@
-/* Reset e Base */
+/* style.css */
 * {
     margin: 0;
     padding: 0;
@@ -6,12 +6,45 @@
     font-family: 'Arial', sans-serif;
 }
 
+/* Reset e Base */
 body {
     height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     padding: 10px;
     transition: background-color 0.3s, color 0.3s;
+}
+
+/* Temas */
+.light-theme {
+    --bg-color: #f9f9f9;
+    --text-color: #333;
+    --message-bg: white;
+    --input-bg: white;
+    --border-color: #ccc;
+    --button-bg: #007bff;
+    --button-hover: #0056b3;
+    --bot-bg: #fff3f6;
+    --bot-border: #ff003c;
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #c1c1c1;
+    --scrollbar-thumb-hover: #a8a8a8;
+}
+
+.dark-theme {
+    --bg-color: #1e1e1e;
+    --text-color: #f0f0f0;
+    --message-bg: #2d2d2d;
+    --input-bg: #333;
+    --border-color: #444;
+    --button-bg: #555;
+    --button-hover: #666;
+    --bot-bg: #2a1a1f;
+    --bot-border: #ff003c;
+    --scrollbar-track: #2a2a2a;
+    --scrollbar-thumb: #505050;
+    --scrollbar-thumb-hover: #626262;
 }
 
 /* Container do Chat */
@@ -24,18 +57,21 @@ body {
     margin: 0 auto;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    overflow: hidden;
     background-color: var(--bg-color);
+    height: 100vh;
+    position: relative;
 }
 
 /* Área de Mensagens */
 .message-box {
     flex: 1;
     overflow-y: auto;
-    padding: 15px;
+    padding: 15px 15px 70px;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+    min-height: 0;
 }
 
 .message {
@@ -45,6 +81,8 @@ body {
     color: var(--text-color);
     word-break: break-word;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    position: relative;
+    width: auto;
 }
 
 /* Mensagens do Bot */
@@ -62,12 +100,19 @@ body {
     font-size: 0.9em;
 }
 
-/* Área de Input */
+/* Área de Input Fixa */
 .input-area {
-    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     padding: 15px;
+    background: var(--bg-color);
     border-top: 1px solid var(--border-color);
-    background-color: var(--input-bg);
+    max-width: 800px;
+    margin: 0 auto;
+    z-index: 999;
+    display: flex;
     gap: 10px;
 }
 
@@ -97,7 +142,86 @@ body {
     background-color: var(--button-hover);
 }
 
-/* Alternador de Tema */
+/* Botões de Ação */
+.message-actions {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+.edit-btn, .delete-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.edit-btn:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.delete-btn:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Widget do WhatsApp */
+.whatsapp-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #25D366;
+    color: white;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.whatsapp-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+/* Barra de Rolagem */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* Tema Switcher */
 .theme-switcher {
     position: fixed;
     top: 20px;
@@ -124,83 +248,85 @@ body {
     transform: scale(1.1);
 }
 
-/* Barra de rolagem */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--scrollbar-thumb-hover);
-}
-
-button {
-    cursor: pointer;
-    user-select: none;
-}
-
-/* Corrige o z-index do alternador de tema */
-.theme-switcher {
-    z-index: 1000;
+/* Widget do WhatsApp (versão completa) */
+.whatsapp-button {
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
-}
-
-.message {
-    position: relative;
-    padding: 12px 40px 12px 15px; /* Espaço para os botões na direita */
-    min-height: 40px;
-}
-
-.message-actions {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #25D366;
+    color: white;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    z-index: 1001;
     display: flex;
-    gap: 6px;
-    opacity: 0.7;
-    transition: opacity 0.2s;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
 }
 
-.message:hover .message-actions {
-    opacity: 1;
+.whatsapp-modal {
+    display: none;
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 300px;
+    background: var(--bg-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    z-index: 1002;
+    border: 1px solid var(--border-color);
 }
 
-.edit-btn, .delete-btn {
+.modal-content {
+    padding: 15px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.modal-header h3 {
+    color: var(--text-color);
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.close-button {
     background: none;
     border: none;
-    padding: 4px;
-    margin: 0;
+    color: var(--text-color);
+    font-size: 24px;
     cursor: pointer;
-    font-size: 16px;
-    color: var(--text-color);
-    opacity: 0.7;
-    transition: all 0.2s;
+    padding: 0 8px;
+    line-height: 1;
 }
 
-.edit-btn:hover, .delete-btn:hover {
-    opacity: 1;
-    transform: scale(1.1);
+.modal-body {
+    color: var(--text-color);
+    font-size: 0.9em;
 }
 
-/* Estilo do input de edição integrado */
-.edit-input {
-    width: calc(100% - 20px);
-    padding: 8px 12px;
-    margin: -8px -12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--input-bg);
-    color: var(--text-color);
-    font: inherit;
+.whatsapp-link {
+    display: block;
+    background: #25D366;
+    color: white !important;
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-top: 15px;
+    transition: background 0.3s ease;
+    font-weight: 500;
+}
+
+.whatsapp-link:hover {
+    background: #128C7E;
 }

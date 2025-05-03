@@ -49,6 +49,24 @@
     const themeToggle = document.getElementById('theme-toggle');
     let inBotConversation = false;
 
+    // Controle do Widget WhatsApp
+    function toggleWhatsApp() {
+        const modal = document.getElementById('whatsappModal');
+        if (modal.style.display === 'block') {
+            modal.style.display = 'none';
+        } else {
+            modal.style.display = 'block';
+        }
+    }
+
+    // Fecha o modal ao clicar fora
+    window.onclick = function(event) {
+        const modal = document.getElementById('whatsappModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+
     // Função para adicionar mensagem ao chat
     function addMessage(text, isBot = false, id = null) {
             const messageDiv = document.createElement('div');
@@ -203,5 +221,22 @@
             }
         });
     </script>
+    <!-- Widget do WhatsApp -->
+    <div class="whatsapp-widget">
+        <button class="whatsapp-button" onclick="toggleWhatsApp()">💬</button>
+        
+        <div class="whatsapp-modal" id="whatsappModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Chat FURIA</h3>
+                    <button class="close-button" onclick="toggleWhatsApp()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Você será redirecionado para o WhatsApp. Deseja continuar?</p>
+                    <a href="https://wa.me/5511993404466" target="_blank" class="whatsapp-link">Abrir WhatsApp</a>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

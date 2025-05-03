@@ -96,21 +96,42 @@ def get_esports_data(game, team, data_type):
         return [f"Erro temporário. Por favor, tente novamente mais tarde."]
 
 def parse_players(soup):
-    """Extrai lista de jogadores da tabela roster-card"""
+    """Extrai lista de jogadores com posições e tratamento de páginas inexistentes"""
     players = []
     roster_table = soup.find('table', {'class': 'roster-card'})
     
     if roster_table:
         for player_row in roster_table.find_all('tr', {'class': 'Player'}):
+            # Extrair nome do jogador
+            name = None
             id_cell = player_row.find('td', {'class': 'ID'})
             if id_cell:
                 player_link = id_cell.find('a', href=True)
-                if player_link and player_link.get('title'):
-                    players.append(player_link['title'])
+                if player_link:
+                    # Remover "(page does not exist)" do nome
+                    raw_name = player_link.get('title', '')
+                    name = raw_name.replace(' (page does not exist)', '')
                 else:
                     bold_name = id_cell.find('b')
                     if bold_name:
-                        players.append(bold_name.get_text(strip=True))
+                        name = bold_name.get_text(strip=True)
+            
+            # Extrair posição
+            position = ""
+            position_cell = player_row.find('td', {'class': 'Position'})
+            if position_cell:
+                position = position_cell.get_text(strip=True)
+                # Limpar formatação da posição
+                position = position.split('.')[-1]
+                position = position.replace('Role:', '').replace('(', '').replace(')', '').strip()
+                position = position.replace('&nbsp;', ' ').strip()
+            
+            # Formatar entrada
+            if name:
+                if position:
+                    players.append(f"{name} - ({position})")
+                else:
+                    players.append(name)
     
     return players[:10] if players else ["Nenhum jogador encontrado"]
 
