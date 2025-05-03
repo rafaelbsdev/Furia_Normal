@@ -46,44 +46,53 @@ class TTLCache:
 cache = TTLCache(maxsize=32, ttl=300)
 
 # ---------------------------------------------------------------
+# Configuração de Times por Jogo
+# ---------------------------------------------------------------
+
+GAME_TEAMS = {
+    'counterstrike': ['FURIA', 'FURIA Academy', 'FURIA Female'],
+    'valorant': ['FURIA', 'FURIA Academy', 'FURIA Female'],
+    'leagueoflegends': ['FURIA', 'FURIA Youth']
+}
+
+# ---------------------------------------------------------------
 # Implementação do Scraper da Liquipedia
 # ---------------------------------------------------------------
 
 LIQUIPEDIA_BASE = "https://liquipedia.net"
 
 @cache
-def get_esports_data(game, data_type):
-    """Coleta dados da Liquipedia com URLs específicas para cada jogo"""
+def get_esports_data(game, team, data_type):
     try:
-        time.sleep(2)  # Respeita o rate limit
-        
+        time.sleep(2)
         headers = {
             'User-Agent': 'FURIA Esports Bot/1.0 (+https://github.com/seu-repositorio)',
             'Accept-Language': 'pt-BR'
         }
         
+        # Construir URL baseado no time
+        team_slug = team.replace(' ', '_')
+        base_url = f"{LIQUIPEDIA_BASE}/{game}/{team_slug}"
+        
         if data_type == 'players':
-            page = requests.get(f"{LIQUIPEDIA_BASE}/{game}/FURIA", headers=headers, timeout=10)
+            page = requests.get(base_url, headers=headers, timeout=10)
             page.raise_for_status()
             soup = BeautifulSoup(page.content, 'html.parser')
             return parse_players(soup)
             
         elif data_type == 'matches':
-            # URL específica para LoL (Played Matches)
             if game == 'leagueoflegends':
-                page = requests.get(f"{LIQUIPEDIA_BASE}/{game}/FURIA/Played_Matches", 
-                                 headers=headers, timeout=10)
+                page_url = f"{base_url}/Played_Matches"
             else:
-                # URLs padrão para outros jogos
-                page = requests.get(f"{LIQUIPEDIA_BASE}/{game}/FURIA/Matches", 
-                                 headers=headers, timeout=10)
+                page_url = f"{base_url}/Matches"
             
+            page = requests.get(page_url, headers=headers, timeout=10)
             page.raise_for_status()
             soup = BeautifulSoup(page.content, 'html.parser')
             return parse_matches(soup, game)
             
     except Exception as e:
-        print(f"Erro ao buscar {data_type} de {game}: {str(e)}")
+        print(f"Erro ao buscar {data_type} de {team} ({game}): {str(e)}")
         return [f"Erro temporário. Por favor, tente novamente mais tarde."]
 
 def parse_players(soup):
@@ -211,7 +220,7 @@ def handle_bot_command(user_id, command):
             'message': "❌ Conversa com o bot encerrada.",
             'is_final': True
         }
-    
+
     # Menu Inicial
     if not state:
         response = (
@@ -241,20 +250,59 @@ def handle_bot_command(user_id, command):
                 return {'message': "⚠️ Opção inválida! Escolha 1, 2 ou 3.", 'is_final': False}
             
             game = games[choice]
+            teams = GAME_TEAMS[game['code']]
+            
+            team_options = "\n".join([f"{i+1}. {team}" for i, team in enumerate(teams)])
             response = (
-                f"📋 **Opções para {game['name']}**:\n"
-                "1. 👥 Ver jogadores\n"
-                "2. 📅 Últimas partidas\n\n"
+                f"🏆 **Times disponíveis para {game['name']}**:\n"
+                f"{team_options}\n\n"
                 "🔴 0. Sair"
             )
-            user_states[user_id] = {'step': 2, 'game': game['code'], 'game_name': game['name']}
+            
+            user_states[user_id] = {
+                'step': 2,
+                'game_code': game['code'],
+                'game_name': game['name'],
+                'teams': teams
+            }
             return {'message': response, 'is_final': False}
             
         except ValueError:
             return {'message': "⚠️ Opção inválida! Digite um número.", 'is_final': False}
     
-    # Processar Escolha
+    # Seleção de Time
     elif state['step'] == 2:
+        try:
+            choice = int(command)
+            if choice == 0:
+                return {'message': "❌ Conversa encerrada.", 'is_final': True}
+            
+            teams = state['teams']
+            if choice < 1 or choice > len(teams):
+                return {'message': "⚠️ Opção inválida! Escolha um número da lista.", 'is_final': False}
+            
+            selected_team = teams[choice-1]
+            
+            response = (
+                f"📋 **Opções para {selected_team} - {state['game_name']}**:\n"
+                "1. 👥 Ver jogadores\n"
+                "2. 📅 Últimas partidas\n\n"
+                "🔴 0. Sair"
+            )
+            
+            user_states[user_id] = {
+                'step': 3,
+                'game_code': state['game_code'],
+                'game_name': state['game_name'],
+                'team': selected_team
+            }
+            return {'message': response, 'is_final': False}
+            
+        except ValueError:
+            return {'message': "⚠️ Opção inválida! Digite um número.", 'is_final': False}
+    
+    # Processar Escolha de Dados
+    elif state['step'] == 3:
         try:
             choice = int(command)
             if choice == 0:
@@ -263,15 +311,13 @@ def handle_bot_command(user_id, command):
             if choice not in [1, 2]:
                 return {'message': "⚠️ Opção inválida! Escolha 1 ou 2.", 'is_final': False}
             
-            game = state['game']
-            game_name = state.get('game_name', game.upper())
             data_type = 'players' if choice == 1 else 'matches'
-            data = get_esports_data(game, data_type)
+            data = get_esports_data(state['game_code'], state['team'], data_type)
             
             if choice == 1:
-                response = f"👥 **Jogadores {game_name}**:\n" + "\n".join([f"• {p}" for p in data])
+                response = f"👥 **Jogadores {state['team']} ({state['game_name']})**:\n" + "\n".join([f"• {p}" for p in data])
             else:
-                response = f"📅 **Últimas partidas {game_name}**:\n" + "\n".join([f"• {m}" for m in data])
+                response = f"📅 **Últimas partidas {state['team']} ({state['game_name']})**:\n" + "\n".join([f"• {m}" for m in data])
             
             response += "\n\n🔚 Digite @FuriaBot para novo comando"
             user_states.pop(user_id, None)
@@ -280,7 +326,7 @@ def handle_bot_command(user_id, command):
         except Exception as e:
             print(f"Erro no bot: {e}")
             return {'message': "⚠️ Erro ao processar comando!", 'is_final': True}
-
+        
 # ---------------------------------------------------------------
 # Socket Events
 # ---------------------------------------------------------------
