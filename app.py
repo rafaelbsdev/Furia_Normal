@@ -95,6 +95,25 @@ def get_esports_data(game, team, data_type):
         print(f"Erro ao buscar {data_type} de {team} ({game}): {str(e)}")
         return [f"Erro temporário. Por favor, tente novamente mais tarde."]
 
+def parse_match_result(result_str, team="FURIA"):
+    """Analisa o placar e adiciona emoji de vitória/derrota"""
+    if not result_str or ':' not in result_str:
+        return result_str  # Retorna o original se inválido
+    
+    try:
+        x, y = map(int, result_str.split(':'))
+        
+        # Verifica qual time é a FURIA (baseado na posição)
+        if x > y:
+            return f"{result_str} | ✅ Vitória"
+        elif y > x:
+            return f"{result_str} | ❌ Derrota"
+        else:
+            return f"{result_str} | ⚡ Empate"
+            
+    except ValueError:
+        return result_str  # Retorna o placar mesmo se não for números
+
 def parse_players(soup):
     """Extrai lista de jogadores com posições e tratamento de páginas inexistentes"""
     players = []
@@ -157,12 +176,12 @@ def parse_csgo_matches(soup):
                 date = cols[0].get_text(strip=True)
                 event = cols[5].get_text(strip=True)
                 team1 = cols[6].get_text(strip=True)
-                resultMatch = cols[7].get_text(strip=True)
-                team2 = cols[8].get_text(strip=True) if len(cols) > 5 else "Evento não especificado"
+                result_match = cols[7].get_text(strip=True)
+                team2 = cols[8].get_text(strip=True) if len(cols) > 8 else "TBD"
                 
-                # Formatação consistente
-                matchup = f"{team1} vs {team2}"
-                matches.append(f"{date} | {matchup} - {event} | {resultMatch}")
+                # Formatação corrigida
+                formatted_result = parse_match_result(result_match)
+                matches.append(f"{date} | {team1} vs {team2} - {event} | {formatted_result}")
     
     return matches if matches else ["Nenhuma partida de CS2 encontrada"]
 
@@ -177,13 +196,11 @@ def parse_valorant_matches(soup):
             if len(cols) >= 4:
                 date = cols[0].get_text(strip=True)
                 event = cols[4].get_text(strip=True)
-                team1 = 'Furia'
-                resultMatch = cols[5].get_text(strip=True)
-                team2 = cols[6].get_text(strip=True) if len(cols) > 5 else "Evento não especificado"
+                result_match = cols[5].get_text(strip=True)
+                team2 = cols[6].get_text(strip=True) if len(cols) > 6 else "TBD"
                 
-                # Formatação consistente
-                matchup = f"{team1} vs {team2}"
-                matches.append(f"{date} | {matchup} - {event} | {resultMatch}")
+                formatted_result = parse_match_result(result_match)
+                matches.append(f"{date} | FURIA vs {team2} - {event} | {formatted_result}")
     
     return matches if matches else ["Nenhuma partida de Valorant encontrada"]
 
