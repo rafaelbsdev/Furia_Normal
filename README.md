@@ -53,7 +53,7 @@ Navegador moderno (Chrome, Firefox, Edge)
 📥 Instalação e Configuração
 Passo 1: Clonar o Repositório
 bash
-git clone https://github.com/seu-usuario/furia-esports-bot.git
+git clone [https://github.com/seu-usuario/furia-esports-bot.git](https://github.com/rafaelbsdev/Furia_Normal)
 cd furia-esports-bot
 
 Passo 2: Configurar Ambiente Virtual
